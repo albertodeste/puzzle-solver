@@ -1,7 +1,9 @@
 package it.ziotob.puzzlesolver.spike;
 
+import it.ziotob.puzzlesolver.model.Piece;
 import it.ziotob.puzzlesolver.model.Point;
 import it.ziotob.puzzlesolver.services.ImageService;
+import it.ziotob.puzzlesolver.services.PieceService;
 import org.assertj.core.api.Assertions;
 import org.junit.Test;
 
@@ -17,6 +19,7 @@ public class SpikeTests {
     private static final String IMAGE_MULTI_PIECES = "multi-pieces.jpg";
 
     private final ImageService imageService = new ImageService(ImageService.DEFAULT_HSV_TOLERANCE);
+    private final PieceService pieceService = new PieceService();
 
     @Test
     public void shouldLoadImage() {
@@ -65,28 +68,58 @@ public class SpikeTests {
     }
 
     @Test
-    public void shouldDetectPieceBorders() {
+    public void shouldInvertBackground() {
 
         BufferedImage image = imageService.loadImage(BASE_PATH + IMAGE_SINGLE_PIECE);
         List<Point> backgroundPoints = imageService.detectBackground(image);
-        List<Point> borderPoints = imageService.detectBorderPoints(image, backgroundPoints);
+        List<Point> piecesPoints = imageService.applyMask(image, backgroundPoints);
 
-        Assertions.assertThat(borderPoints).isNotEmpty();
+        Assertions.assertThat(piecesPoints).isNotEmpty();
 
-        borderPoints.forEach(point -> image.setRGB(point.getX(), point.getY(), 16737480));
-        imageService.writeImage(BASE_PATH_OUT + "single-piece-borders.jpg", image);
+        piecesPoints.forEach(point -> image.setRGB(point.getX(), point.getY(), 16737480));
+        imageService.writeImage(BASE_PATH_OUT + "single-piece-mask.jpg", image);
     }
 
     @Test
-    public void shouldDetectPieceBordersOnMultiplePieces() {
+    public void shouldInvertMultiPiecesBackground() {
 
         BufferedImage image = imageService.loadImage(BASE_PATH + IMAGE_MULTI_PIECES);
         List<Point> backgroundPoints = imageService.detectBackground(image);
-        List<Point> borderPoints = imageService.detectBorderPoints(image, backgroundPoints);
+        List<Point> piecesPoints = imageService.applyMask(image, backgroundPoints);
 
-        Assertions.assertThat(borderPoints).isNotEmpty();
+        Assertions.assertThat(piecesPoints).isNotEmpty();
 
-        borderPoints.forEach(point -> image.setRGB(point.getX(), point.getY(), 16737480));
-        imageService.writeImage(BASE_PATH_OUT + "multi-pieces-borders.jpg", image);
+        piecesPoints.forEach(point -> image.setRGB(point.getX(), point.getY(), 16737480));
+        imageService.writeImage(BASE_PATH_OUT + "multi-pieces-mask.jpg", image);
+    }
+
+    @Test
+    public void shouldDetectPieces() {
+
+        BufferedImage image = imageService.loadImage(BASE_PATH + IMAGE_SINGLE_PIECE);
+        List<Point> backgroundPoints = imageService.detectBackground(image);
+        List<Point> piecesPoints = imageService.applyMask(image, backgroundPoints);
+        List<Piece> pieces = pieceService.detectPieces(piecesPoints);
+
+        Assertions.assertThat(pieces.size()).isEqualTo(1);
+
+        pieces.forEach(piece -> piece.getPoints().forEach(point ->
+                image.setRGB(point.getX(), point.getY(), 16737480)));
+        imageService.writeImage(BASE_PATH_OUT + "single-piece-pieces.jpg", image);
+    }
+
+    @Test
+    public void shouldDetectMultiPieces() {
+
+        BufferedImage image = imageService.loadImage(BASE_PATH + IMAGE_MULTI_PIECES);
+        List<Point> backgroundPoints = imageService.detectBackground(image);
+        List<Point> piecesPoints = imageService.applyMask(image, backgroundPoints);
+        List<Piece> pieces = pieceService.detectPieces(piecesPoints);
+
+        Assertions.assertThat(pieces.size()).isEqualTo(9);
+
+        pieces.forEach(piece -> piece.getPoints().forEach(point ->
+                image.setRGB(point.getX(), point.getY(), 16737480)));
+        imageService.writeImage(BASE_PATH_OUT + "multi-pieces-pieces.jpg", image);
     }
 }

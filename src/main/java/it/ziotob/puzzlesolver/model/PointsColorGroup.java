@@ -8,7 +8,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 @RequiredArgsConstructor
-public class PointsGroups {
+public class PointsColorGroup {
 
     private final int tolerance;
     private final Map<Integer, List<Point>> groups = new HashMap<>();

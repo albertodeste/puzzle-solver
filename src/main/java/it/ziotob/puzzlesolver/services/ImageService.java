@@ -2,7 +2,7 @@ package it.ziotob.puzzlesolver.services;
 
 import it.ziotob.puzzlesolver.exception.ApplicationException;
 import it.ziotob.puzzlesolver.model.Point;
-import it.ziotob.puzzlesolver.model.PointsGroups;
+import it.ziotob.puzzlesolver.model.PointsColorGroup;
 import lombok.AllArgsConstructor;
 import lombok.Setter;
 
@@ -34,7 +34,7 @@ public class ImageService {
 
     public List<Point> detectBackground(BufferedImage image) {
 
-        PointsGroups group = new PointsGroups(hsvTolerance);
+        PointsColorGroup group = new PointsColorGroup(hsvTolerance);
         pointsStream(image).forEach(point -> {
 
             int rgb = image.getRGB(point.getX(), point.getY());
@@ -74,6 +74,7 @@ public class ImageService {
         }
     }
 
+    //TODO move into piece factory
     public List<Point> detectBorderPoints(BufferedImage image, List<Point> backgroundPoints) {
 
         int[][] matrix = new int[image.getHeight()][image.getWidth()];
@@ -87,13 +88,29 @@ public class ImageService {
                         .filter(x -> matrix[y][x] == 0)
                         .filter(x ->
                                 matrix[y - 1][x] != 0 ||
-                                matrix[y + 1][x] != 0 ||
-                                matrix[y][x - 1] != 0 ||
-                                matrix[y][x + 1] != 0
+                                        matrix[y + 1][x] != 0 ||
+                                        matrix[y][x - 1] != 0 ||
+                                        matrix[y][x + 1] != 0
                         )
                         .mapToObj(x -> new Point(x, y))
                 )
                 .flatMap(i -> i)
+                .collect(Collectors.toList());
+    }
+
+    public List<Point> applyMask(BufferedImage image, List<Point> backgroundPoints) {
+
+        boolean[][] points = new boolean[image.getHeight()][image.getWidth()];
+
+        for (Point point : backgroundPoints) {
+            points[point.getY()][point.getX()] = true;
+        }
+
+        return IntStream.range(0, image.getWidth()).parallel()
+                .mapToObj(x -> IntStream.range(0, image.getHeight())
+                        .filter(y -> !points[y][x])
+                        .mapToObj(y -> new Point(x, y)))
+                .flatMap(s -> s)
                 .collect(Collectors.toList());
     }
 }
