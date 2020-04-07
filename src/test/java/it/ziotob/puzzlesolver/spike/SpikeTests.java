@@ -122,4 +122,40 @@ public class SpikeTests {
                 image.setRGB(point.getX(), point.getY(), 16737480)));
         imageService.writeImage(BASE_PATH_OUT + "multi-pieces-pieces.jpg", image);
     }
+
+    @Test
+    public void shouldDetectPieceBorders() {
+
+        BufferedImage image = imageService.loadImage(BASE_PATH + IMAGE_SINGLE_PIECE);
+        List<Point> backgroundPoints = imageService.detectBackground(image);
+        List<Point> piecesPoints = imageService.applyMask(image, backgroundPoints);
+        List<Piece> pieces = pieceService.detectPieces(piecesPoints);
+
+        Assertions.assertThat(pieces)
+                .allMatch(piece -> !piece.getBorderPoints().isEmpty());
+
+        pieces.forEach(piece -> piece.getPoints().forEach(point ->
+                image.setRGB(point.getX(), point.getY(), 16737480)));
+        pieces.forEach(piece -> piece.getBorderPoints().forEach(point ->
+                image.setRGB(point.getX(), point.getY(), 0x00FF0000)));
+        imageService.writeImage(BASE_PATH_OUT + "single-piece-borders.jpg", image);
+    }
+
+    @Test
+    public void shouldDetectMultiPieceBorders() {
+
+        BufferedImage image = imageService.loadImage(BASE_PATH + IMAGE_MULTI_PIECES);
+        List<Point> backgroundPoints = imageService.detectBackground(image);
+        List<Point> piecesPoints = imageService.applyMask(image, backgroundPoints);
+        List<Piece> pieces = pieceService.detectPieces(piecesPoints);
+
+        Assertions.assertThat(pieces)
+                .allMatch(piece -> !piece.getBorderPoints().isEmpty());
+
+        pieces.forEach(piece -> piece.getPoints().forEach(point ->
+                image.setRGB(point.getX(), point.getY(), 16737480)));
+        pieces.forEach(piece -> piece.getBorderPoints().forEach(point ->
+                image.setRGB(point.getX(), point.getY(), 0x00FF0000)));
+        imageService.writeImage(BASE_PATH_OUT + "multi-pieces-borders.jpg", image);
+    }
 }

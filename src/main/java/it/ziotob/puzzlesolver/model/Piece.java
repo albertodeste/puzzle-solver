@@ -6,8 +6,10 @@ import lombok.RequiredArgsConstructor;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Getter
@@ -34,7 +36,13 @@ public class Piece {
     }
 
     private static List<Point> detectBorderPoints(List<Point> points) {
-        return Collections.emptyList(); //TODO implement
+
+        PointsGroup group = new PointsGroup();
+        points.forEach(group::addPoint);
+
+        return points.stream()
+                .filter(point -> group.findClosePoints(point).size() < 4)
+                .collect(Collectors.toList());
     }
 
     public int getSize() {
