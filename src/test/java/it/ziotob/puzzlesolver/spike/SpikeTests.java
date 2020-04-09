@@ -7,8 +7,12 @@ import it.ziotob.puzzlesolver.services.PieceService;
 import org.assertj.core.api.Assertions;
 import org.junit.Test;
 
+import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.util.AbstractMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class SpikeTests {
 
@@ -138,7 +142,33 @@ public class SpikeTests {
                 image.setRGB(point.getX(), point.getY(), 16737480)));
         pieces.forEach(piece -> piece.getBorderPoints().forEach(point ->
                 image.setRGB(point.getX(), point.getY(), 0x00FF0000)));
+
+        /*
+        Point center = pieces.get(0).getCenter();
+        List<Point> points = pieces.get(0).getBorderPoints();
+        Map<Point, Integer> distances = points.stream()
+                .collect(Collectors.toMap(point -> point, point -> point.distance(center)));
+
+        AbstractMap.SimpleEntry<Integer, Integer> minMax = distances.values().stream()
+                .map(val -> new AbstractMap.SimpleEntry<>(val, val))
+                .reduce(new AbstractMap.SimpleEntry<>(Integer.MAX_VALUE, Integer.MIN_VALUE),
+                        (prev, cur) -> new AbstractMap.SimpleEntry<>(Math.min(prev.getKey(), cur.getKey()), Math.max(prev.getValue(), cur.getValue())));
+
+        distances.forEach((point, distance) -> image.setRGB(point.getX(), point.getY(), getColor(distance, minMax.getKey(), minMax.getValue())));
+        image.setRGB(center.getX(), center.getY(), 0x00FF0000);
+         */
+
         imageService.writeImage(BASE_PATH_OUT + "single-piece-borders.jpg", image);
+    }
+
+    private int getColor(int distance, int minDistance, int maxDistance) {
+
+        int percentage = (int)(((distance - minDistance) / (float)(maxDistance - minDistance)) * 100);
+
+        int hueMaxVal = 75;
+        float hue = (float)(hueMaxVal / 100.0) * percentage;
+
+        return Color.HSBtoRGB((float)(hue / 100.0), (float) 0.75, (float) 0.75);
     }
 
     @Test
@@ -157,5 +187,43 @@ public class SpikeTests {
         pieces.forEach(piece -> piece.getBorderPoints().forEach(point ->
                 image.setRGB(point.getX(), point.getY(), 0x00FF0000)));
         imageService.writeImage(BASE_PATH_OUT + "multi-pieces-borders.jpg", image);
+    }
+
+    @Test
+    public void shouldDetectPieceHullPoints() {
+
+        BufferedImage image = imageService.loadImage(BASE_PATH + IMAGE_SINGLE_PIECE);
+        List<Point> backgroundPoints = imageService.detectBackground(image);
+        List<Point> piecesPoints = imageService.applyMask(image, backgroundPoints);
+        List<Piece> pieces = pieceService.detectPieces(piecesPoints);
+
+        Assertions.assertThat(pieces)
+                .allMatch(piece -> !piece.getHullPoints().isEmpty());
+
+        pieces.forEach(piece -> piece.getPoints().forEach(point ->
+                image.setRGB(point.getX(), point.getY(), 16737480)));
+        pieces.forEach(piece -> piece.getHullPoints().forEach(point ->
+                image.setRGB(point.getX(), point.getY(), 0x00FF0000)));
+
+        imageService.writeImage(BASE_PATH_OUT + "single-piece-hull.jpg", image);
+    }
+
+    @Test
+    public void shouldDetectMultiPiecesHullPoints() {
+
+        BufferedImage image = imageService.loadImage(BASE_PATH + IMAGE_MULTI_PIECES);
+        List<Point> backgroundPoints = imageService.detectBackground(image);
+        List<Point> piecesPoints = imageService.applyMask(image, backgroundPoints);
+        List<Piece> pieces = pieceService.detectPieces(piecesPoints);
+
+        Assertions.assertThat(pieces)
+                .allMatch(piece -> !piece.getHullPoints().isEmpty());
+
+        pieces.forEach(piece -> piece.getPoints().forEach(point ->
+                image.setRGB(point.getX(), point.getY(), 16737480)));
+        pieces.forEach(piece -> piece.getHullPoints().forEach(point ->
+                image.setRGB(point.getX(), point.getY(), 0x000000FF)));
+
+        imageService.writeImage(BASE_PATH_OUT + "multi-pieces-hull.jpg", image);
     }
 }
