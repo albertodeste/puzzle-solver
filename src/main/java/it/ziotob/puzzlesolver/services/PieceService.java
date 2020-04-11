@@ -1,6 +1,7 @@
 package it.ziotob.puzzlesolver.services;
 
 import it.ziotob.puzzlesolver.model.Piece;
+import it.ziotob.puzzlesolver.model.PieceFactory;
 import it.ziotob.puzzlesolver.model.Point;
 import it.ziotob.puzzlesolver.model.PointsGroup;
 
@@ -15,8 +16,8 @@ public class PieceService {
         PointsGroup pointsGroup = new PointsGroup();
         piecesPoints.forEach(pointsGroup::addPoint);
 
-        List<Piece> result = new ArrayList<>();
-        Optional<Piece> piece = detectPiece(pointsGroup);
+        List<List<Point>> result = new ArrayList<>();
+        Optional<List<Point>> piece = detectPiece(pointsGroup);
 
         while (piece.isPresent()) {
 
@@ -24,14 +25,16 @@ public class PieceService {
             piece = detectPiece(pointsGroup);
         }
 
-        return discardImperfections(result);
+        return discardImperfections(result).parallelStream()
+                .map(PieceFactory::factory)
+                .collect(Collectors.toList());
     }
 
-    private List<Piece> discardImperfections(List<Piece> pieces) {
+    private List<List<Point>> discardImperfections(List<List<Point>> pieces) {
 
-        int biggestPiecePoints = pieces.stream().mapToInt(Piece::getSize).max().orElse(0);
+        int biggestPiecePoints = pieces.stream().mapToInt(List::size).max().orElse(0);
         List<Integer> distances = pieces.stream()
-                .mapToInt(Piece::getSize)
+                .mapToInt(List::size)
                 .boxed()
                 .map(size -> biggestPiecePoints - size)
                 .collect(Collectors.toList());
@@ -50,22 +53,22 @@ public class PieceService {
             return pieces;
         } else {
 
-            List<Piece> sortedPieces = pieces.stream()
-                    .sorted(Comparator.comparingInt(p -> p.getSize() * -1))
+            List<List<Point>> sortedPieces = pieces.stream()
+                    .sorted(Comparator.comparingInt(l -> l.size() * -1))
                     .collect(Collectors.toList());
             int minimumPiecesSize = IntStream.range(1, pieces.size())
-                    .filter(i -> sortedPieces.get(i - 1).getSize() - sortedPieces.get(i).getSize() == biggestDistance)
-                    .map(i -> sortedPieces.get(i -1).getSize())
+                    .filter(i -> sortedPieces.get(i - 1).size() - sortedPieces.get(i).size() == biggestDistance)
+                    .map(i -> sortedPieces.get(i - 1).size())
                     .findFirst()
                     .orElse(0);
 
             return pieces.stream()
-                    .filter(piece -> piece.getSize() >= minimumPiecesSize)
+                    .filter(piece -> piece.size() >= minimumPiecesSize)
                     .collect(Collectors.toList());
         }
     }
 
-    private Optional<Piece> detectPiece(PointsGroup pointsGroup) {
+    private Optional<List<Point>> detectPiece(PointsGroup pointsGroup) {
 
         List<Point> points = new ArrayList<>();
         List<Point> targetPoints = new ArrayList<>();
@@ -87,7 +90,7 @@ public class PieceService {
         if (points.isEmpty()) {
             return Optional.empty();
         } else {
-            return Optional.of(Piece.factory(points));
+            return Optional.of(points);
         }
     }
 }

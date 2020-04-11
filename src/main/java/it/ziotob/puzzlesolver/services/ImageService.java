@@ -68,34 +68,10 @@ public class ImageService {
     public void writeImage(String imagePath, BufferedImage image) {
 
         try {
-            ImageIO.write(image, "JPEG", new File(imagePath));
+            ImageIO.write(image, "PNG", new File(imagePath));
         } catch (IOException e) {
             throw new ApplicationException("Error while persisting image", e);
         }
-    }
-
-    //TODO move into piece factory
-    public List<Point> detectBorderPoints(BufferedImage image, List<Point> backgroundPoints) {
-
-        int[][] matrix = new int[image.getHeight()][image.getWidth()];
-
-        for (Point point : backgroundPoints) {
-            matrix[point.getY()][point.getX()] = 1;
-        }
-
-        return IntStream.range(1, image.getHeight() - 1)
-                .mapToObj(y -> IntStream.range(1, image.getWidth() - 1)
-                        .filter(x -> matrix[y][x] == 0)
-                        .filter(x ->
-                                matrix[y - 1][x] != 0 ||
-                                        matrix[y + 1][x] != 0 ||
-                                        matrix[y][x - 1] != 0 ||
-                                        matrix[y][x + 1] != 0
-                        )
-                        .mapToObj(x -> new Point(x, y))
-                )
-                .flatMap(i -> i)
-                .collect(Collectors.toList());
     }
 
     public List<Point> applyMask(BufferedImage image, List<Point> backgroundPoints) {

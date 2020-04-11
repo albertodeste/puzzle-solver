@@ -9,10 +9,7 @@ import org.junit.Test;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.util.AbstractMap;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 public class SpikeTests {
 
@@ -43,7 +40,7 @@ public class SpikeTests {
         Assertions.assertThat(backgroundPoints.size()).isGreaterThan((image.getWidth() * image.getHeight()) / 2);
 
         backgroundPoints.forEach(point -> image.setRGB(point.getX(), point.getY(), 0));
-        imageService.writeImage(BASE_PATH_OUT + "single-piece-noback.jpg", image);
+        imageService.writeImage(BASE_PATH_OUT + "single-piece-noback.png", image);
     }
 
     @Test
@@ -56,7 +53,7 @@ public class SpikeTests {
         Assertions.assertThat(backgroundPoints.size()).isGreaterThan((image.getWidth() * image.getHeight()) / 2);
 
         backgroundPoints.forEach(point -> image.setRGB(point.getX(), point.getY(), 0));
-        imageService.writeImage(BASE_PATH_OUT + "single-piece-2-noback.jpg", image);
+        imageService.writeImage(BASE_PATH_OUT + "single-piece-2-noback.png", image);
     }
 
     @Test
@@ -68,7 +65,7 @@ public class SpikeTests {
         Assertions.assertThat(backgroundPoints.size()).isGreaterThan((image.getWidth() * image.getHeight()) / 2);
 
         backgroundPoints.forEach(point -> image.setRGB(point.getX(), point.getY(), 0));
-        imageService.writeImage(BASE_PATH_OUT + "multi-pieces-noback.jpg", image);
+        imageService.writeImage(BASE_PATH_OUT + "multi-pieces-noback.png", image);
     }
 
     @Test
@@ -81,7 +78,7 @@ public class SpikeTests {
         Assertions.assertThat(piecesPoints).isNotEmpty();
 
         piecesPoints.forEach(point -> image.setRGB(point.getX(), point.getY(), 16737480));
-        imageService.writeImage(BASE_PATH_OUT + "single-piece-mask.jpg", image);
+        imageService.writeImage(BASE_PATH_OUT + "single-piece-mask.png", image);
     }
 
     @Test
@@ -94,7 +91,7 @@ public class SpikeTests {
         Assertions.assertThat(piecesPoints).isNotEmpty();
 
         piecesPoints.forEach(point -> image.setRGB(point.getX(), point.getY(), 16737480));
-        imageService.writeImage(BASE_PATH_OUT + "multi-pieces-mask.jpg", image);
+        imageService.writeImage(BASE_PATH_OUT + "multi-pieces-mask.png", image);
     }
 
     @Test
@@ -109,7 +106,7 @@ public class SpikeTests {
 
         pieces.forEach(piece -> piece.getPoints().forEach(point ->
                 image.setRGB(point.getX(), point.getY(), 16737480)));
-        imageService.writeImage(BASE_PATH_OUT + "single-piece-pieces.jpg", image);
+        imageService.writeImage(BASE_PATH_OUT + "single-piece-pieces.png", image);
     }
 
     @Test
@@ -124,7 +121,7 @@ public class SpikeTests {
 
         pieces.forEach(piece -> piece.getPoints().forEach(point ->
                 image.setRGB(point.getX(), point.getY(), 16737480)));
-        imageService.writeImage(BASE_PATH_OUT + "multi-pieces-pieces.jpg", image);
+        imageService.writeImage(BASE_PATH_OUT + "multi-pieces-pieces.png", image);
     }
 
     @Test
@@ -158,17 +155,17 @@ public class SpikeTests {
         image.setRGB(center.getX(), center.getY(), 0x00FF0000);
          */
 
-        imageService.writeImage(BASE_PATH_OUT + "single-piece-borders.jpg", image);
+        imageService.writeImage(BASE_PATH_OUT + "single-piece-borders.png", image);
     }
 
     private int getColor(int distance, int minDistance, int maxDistance) {
 
-        int percentage = (int)(((distance - minDistance) / (float)(maxDistance - minDistance)) * 100);
+        int percentage = (int) (((distance - minDistance) / (float) (maxDistance - minDistance)) * 100);
 
         int hueMaxVal = 75;
-        float hue = (float)(hueMaxVal / 100.0) * percentage;
+        float hue = (float) (hueMaxVal / 100.0) * percentage;
 
-        return Color.HSBtoRGB((float)(hue / 100.0), (float) 0.75, (float) 0.75);
+        return Color.HSBtoRGB((float) (hue / 100.0), (float) 0.75, (float) 0.75);
     }
 
     @Test
@@ -186,7 +183,7 @@ public class SpikeTests {
                 image.setRGB(point.getX(), point.getY(), 16737480)));
         pieces.forEach(piece -> piece.getBorderPoints().forEach(point ->
                 image.setRGB(point.getX(), point.getY(), 0x00FF0000)));
-        imageService.writeImage(BASE_PATH_OUT + "multi-pieces-borders.jpg", image);
+        imageService.writeImage(BASE_PATH_OUT + "multi-pieces-borders.png", image);
     }
 
     @Test
@@ -200,12 +197,14 @@ public class SpikeTests {
         Assertions.assertThat(pieces)
                 .allMatch(piece -> !piece.getHullPoints().isEmpty());
 
+        backgroundPoints.forEach(point ->
+                image.setRGB(point.getX(), point.getY(), 0X00FFFFFF));
         pieces.forEach(piece -> piece.getPoints().forEach(point ->
                 image.setRGB(point.getX(), point.getY(), 16737480)));
         pieces.forEach(piece -> piece.getHullPoints().forEach(point ->
-                image.setRGB(point.getX(), point.getY(), 0x00FF0000)));
+                image.setRGB(point.getX(), point.getY(), 0x000000FF)));
 
-        imageService.writeImage(BASE_PATH_OUT + "single-piece-hull.jpg", image);
+        imageService.writeImage(BASE_PATH_OUT + "single-piece-hull.png", image);
     }
 
     @Test
@@ -219,11 +218,64 @@ public class SpikeTests {
         Assertions.assertThat(pieces)
                 .allMatch(piece -> !piece.getHullPoints().isEmpty());
 
+        backgroundPoints.forEach(point -> image.setRGB(point.getX(), point.getY(), 0x00FFFFFF));
         pieces.forEach(piece -> piece.getPoints().forEach(point ->
                 image.setRGB(point.getX(), point.getY(), 16737480)));
+        pieces.forEach(piece -> piece.getBorderPoints().forEach(point ->
+                image.setRGB(point.getX(), point.getY(), 0X0000FF00)));
         pieces.forEach(piece -> piece.getHullPoints().forEach(point ->
                 image.setRGB(point.getX(), point.getY(), 0x000000FF)));
+        pieces.forEach(piece ->
+                image.setRGB(piece.getBorderPoints().get(0).getX(), piece.getBorderPoints().get(0).getY(), 0X00FF0000));
 
-        imageService.writeImage(BASE_PATH_OUT + "multi-pieces-hull.jpg", image);
+        imageService.writeImage(BASE_PATH_OUT + "multi-pieces-hull.png", image);
+    }
+
+    @Test
+    public void shouldDetectConvexityDefects() {
+
+        BufferedImage image = imageService.loadImage(BASE_PATH + IMAGE_SINGLE_PIECE);
+        List<Point> backgroundPoints = imageService.detectBackground(image);
+        List<Point> piecesPoints = imageService.applyMask(image, backgroundPoints);
+        List<Piece> pieces = pieceService.detectPieces(piecesPoints);
+
+        Assertions.assertThat(pieces)
+                .allMatch(piece -> piece.getConvexityDefects().size() == 6);
+
+        backgroundPoints.forEach(point -> image.setRGB(point.getX(), point.getY(), 0x00FFFFFF));
+        pieces.forEach(piece -> piece.getPoints().forEach(point ->
+                image.setRGB(point.getX(), point.getY(), 16737480)));
+        pieces.forEach(piece -> piece.getConvexityDefects().forEach(convexityDefect -> {
+
+            image.setRGB(convexityDefect.getHullPointA().getX(), convexityDefect.getHullPointA().getY(), 0x000000FF);
+            image.setRGB(convexityDefect.getHullPointB().getX(), convexityDefect.getHullPointB().getY(), 0x000000FF);
+            image.setRGB(convexityDefect.getDeepestPoint().getX(), convexityDefect.getDeepestPoint().getY(), 0x00FF0000);
+        }));
+
+        imageService.writeImage(BASE_PATH_OUT + "single-piece-convexity.png", image);
+    }
+
+    @Test
+    public void shouldDetectConvexityDefectsOnMultiplePoints() {
+
+        BufferedImage image = imageService.loadImage(BASE_PATH + IMAGE_MULTI_PIECES);
+        List<Point> backgroundPoints = imageService.detectBackground(image);
+        List<Point> piecesPoints = imageService.applyMask(image, backgroundPoints);
+        List<Piece> pieces = pieceService.detectPieces(piecesPoints);
+
+        Assertions.assertThat(pieces)
+                .allMatch(piece -> !piece.getConvexityDefects().isEmpty());
+
+        backgroundPoints.forEach(point -> image.setRGB(point.getX(), point.getY(), 0x00FFFFFF));
+        pieces.forEach(piece -> piece.getPoints().forEach(point ->
+                image.setRGB(point.getX(), point.getY(), 16737480)));
+        pieces.forEach(piece -> piece.getConvexityDefects().forEach(convexityDefect -> {
+
+            image.setRGB(convexityDefect.getHullPointA().getX(), convexityDefect.getHullPointA().getY(), 0x000000FF);
+            image.setRGB(convexityDefect.getHullPointB().getX(), convexityDefect.getHullPointB().getY(), 0x000000FF);
+            image.setRGB(convexityDefect.getDeepestPoint().getX(), convexityDefect.getDeepestPoint().getY(), 0x00FF0000);
+        }));
+
+        imageService.writeImage(BASE_PATH_OUT + "multi-pieces-convexity.png", image);
     }
 }
