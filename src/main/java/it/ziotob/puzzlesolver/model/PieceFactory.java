@@ -26,26 +26,145 @@ public class PieceFactory {
         List<Point> borderPoints = PointUtils.sortClockwise(sortBorders(detectBorderPoints(points)));
         List<Point> convexHull = PointUtils.sortClockwise(PointUtils.convexHull(borderPoints));
         List<ConvexityDefect> convexityDefects = discardConvexityImperfections(detectConvexityDefects(borderPoints, convexHull));
+        convexityDefects = sortClockwise(convexityDefects, borderPoints);
+        List<OuterLock> outerLocks = detectOuterLocks(convexityDefects, borderPoints, points);
 
-        return new Piece(points, borderPoints, convexHull, convexityDefects, center);
+        return new Piece(points, borderPoints, convexHull, convexityDefects, center, outerLocks);
+    }
+
+    private static List<OuterLock> detectOuterLocks(List<ConvexityDefect> convexityDefects, List<Point> borderPoints, List<Point> points) {
+
+        List<OuterLock> outerLocks = new ArrayList<>();
+
+        for (int i = 1; i <= convexityDefects.size(); i++) {
+
+            Optional<OuterLock> outerLockOpt = detectOuterLock(convexityDefects.get(i - 1), convexityDefects.get(i % convexityDefects.size()), borderPoints, points);
+            if (outerLockOpt.isPresent()) {
+
+                outerLocks.add(outerLockOpt.get());
+                i++;
+            }
+        }
+
+        return outerLocks;
+    }
+
+    private static Optional<OuterLock> detectOuterLock(ConvexityDefect convexityDefectOne, ConvexityDefect convexityDefectTwo, List<Point> borderPoints, List<Point> points) {
+
+        List<Point> perimeter = Stream.concat(
+                getClockwisePerimeterBetween(borderPoints, convexityDefectOne.getDeepestPoint(), convexityDefectTwo.getDeepestPoint()).stream(),
+                PointUtils.segmentBetween(convexityDefectOne.getDeepestPoint(), convexityDefectTwo.getDeepestPoint()).stream())
+                .distinct().collect(Collectors.toList());
+
+        List<Point> area = extractArea(perimeter, points);
+        area.addAll(perimeter);
+
+        BigDecimal circularityRate = BigDecimal.valueOf(area.size()).divide(BigDecimal.valueOf(perimeter.size()).pow(2), 5, RoundingMode.HALF_UP);
+        BigDecimal epsilon = new BigDecimal("0.018");
+        BigDecimal referenceValue = new BigDecimal("0.08");
+
+        if (circularityRate.subtract(referenceValue).abs().compareTo(epsilon) <= 0) {
+            return Optional.of(new OuterLock(perimeter, area, Arrays.asList(convexityDefectOne, convexityDefectTwo)));
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    private static List<Point> extractArea(List<Point> perimeter, List<Point> points) {
+
+        List<Point> area = new ArrayList<>();
+        Map<Integer, List<Integer>> matrix = new HashMap<>();
+        for (Point point : points) {
+
+            if (!matrix.containsKey(point.getX())) {
+                matrix.put(point.getX(), new ArrayList<>());
+            }
+            matrix.get(point.getX()).add(point.getY());
+        }
+        Set<Point> perimeterSet = new HashSet<>(perimeter);
+        List<Point> pointsToCheck = new ArrayList<>();
+
+        Point startPoint = PointUtils.detectInternalPoint(perimeter, points)
+                .orElseThrow(() -> new ApplicationException("Unable to find point to start area calculation"));
+        pointsToCheck.add(startPoint);
+
+        while (!pointsToCheck.isEmpty()) {
+
+            Point point = pointsToCheck.get(0);
+            pointsToCheck.remove(0);
+            matrix.get(point.getX()).remove(point.getY());
+
+            area.add(point);
+            Stream.of(
+                    new Point(point.getX() + 1, point.getY()),
+                    new Point(point.getX(), point.getY() + 1),
+                    new Point(point.getX() - 1, point.getY()),
+                    new Point(point.getX(), point.getY() - 1)
+            )
+                    .filter(p -> matrix.containsKey(p.getX()) && matrix.get(p.getX()).contains(p.getY()))
+                    .filter(p -> !perimeterSet.contains(p))
+                    .peek(p -> matrix.get(p.getX()).remove(p.getY()))
+                    .forEach(pointsToCheck::add);
+        }
+
+        return area;
+    }
+
+    private static List<Point> getClockwisePerimeterBetween(List<Point> borderPoints, Point pointA, Point pointB) {
+
+        List<Point> perimeter = new ArrayList<>();
+
+        int i = 0;
+        while (!borderPoints.get(i).equals(pointA)) {
+            i++;
+        }
+        while (!borderPoints.get(i).equals(pointB)) {
+
+            i = (i + 1) % borderPoints.size();
+            perimeter.add(borderPoints.get(i));
+        }
+        perimeter.add(pointB);
+
+        return perimeter;
+    }
+
+    private static List<ConvexityDefect> sortClockwise(List<ConvexityDefect> convexityDefects, List<Point> borderPoints) {
+
+        Map<Point, ConvexityDefect> elementsToPlace = convexityDefects.stream()
+                .collect(Collectors.toMap(ConvexityDefect::getHullPointA, e -> e));
+        List<ConvexityDefect> sortedList = new ArrayList<>();
+
+        borderPoints.forEach(point -> {
+
+            if (elementsToPlace.containsKey(point)) {
+
+                sortedList.add(elementsToPlace.get(point));
+                elementsToPlace.remove(point);
+            }
+        });
+
+        return sortedList;
     }
 
     private static List<ConvexityDefect> discardConvexityImperfections(List<ConvexityDefect> convexityDefects) {
 
+        return convexityDefects.stream().filter(d -> d.getDistance() > 10).collect(Collectors.toList());
+        /*
         List<ConvexityDefect> sortedDefects = convexityDefects.stream()
                 .sorted(Comparator.comparingDouble(ConvexityDefect::getDistance).reversed())
                 .collect(Collectors.toList());
-        int biggestDifference = (int)IntStream.range(0, sortedDefects.size() - 1)
+        int biggestDifference = (int) IntStream.range(0, sortedDefects.size() - 1)
                 .mapToDouble(i -> sortedDefects.get(i).getDistance() - sortedDefects.get(i + 1).getDistance())
                 .max().orElse(Double.MAX_VALUE);
         int discardIndex = IntStream.range(1, sortedDefects.size())
-                .filter(i -> (int)(sortedDefects.get(i - 1).getDistance() - sortedDefects.get(i).getDistance()) == biggestDifference)
+                .filter(i -> (int) (sortedDefects.get(i - 1).getDistance() - sortedDefects.get(i).getDistance()) == biggestDifference)
                 .findFirst().orElse(sortedDefects.size());
 
         return IntStream.range(0, sortedDefects.size())
                 .filter(i -> i < discardIndex)
                 .mapToObj(sortedDefects::get)
                 .collect(Collectors.toList());
+         */
     }
 
     private static List<ConvexityDefect> detectConvexityDefects(List<Point> borderPoints, List<Point> convexHull) {

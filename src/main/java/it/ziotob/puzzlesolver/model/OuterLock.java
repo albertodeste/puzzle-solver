@@ -7,12 +7,9 @@ import java.util.List;
 
 @RequiredArgsConstructor
 @Getter
-public class Piece {
+public class OuterLock {
 
-    private final List<Point> points;
     private final List<Point> borderPoints;
-    private final List<Point> hullPoints;
+    private final List<Point> points;
     private final List<ConvexityDefect> convexityDefects;
-    private final Point center;
-    private final List<OuterLock> outerLocks;
 }

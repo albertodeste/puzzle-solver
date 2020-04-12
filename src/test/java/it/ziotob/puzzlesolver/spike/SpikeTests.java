@@ -256,7 +256,7 @@ public class SpikeTests {
     }
 
     @Test
-    public void shouldDetectConvexityDefectsOnMultiplePoints() {
+    public void shouldDetectConvexityDefectsOnMultiplePieces() {
 
         BufferedImage image = imageService.loadImage(BASE_PATH + IMAGE_MULTI_PIECES);
         List<Point> backgroundPoints = imageService.detectBackground(image);
@@ -277,5 +277,44 @@ public class SpikeTests {
         }));
 
         imageService.writeImage(BASE_PATH_OUT + "multi-pieces-convexity.png", image);
+    }
+
+    @Test
+    public void shouldDetectOuterLocksOnSinglePiece() {
+
+        BufferedImage image = imageService.loadImage(BASE_PATH + IMAGE_SINGLE_PIECE);
+        List<Point> backgroundPoints = imageService.detectBackground(image);
+        List<Point> piecesPoints = imageService.applyMask(image, backgroundPoints);
+        List<Piece> pieces = pieceService.detectPieces(piecesPoints);
+
+        Assertions.assertThat(pieces)
+                .allMatch(piece -> piece.getOuterLocks().size() == 2);
+
+        backgroundPoints.forEach(point -> image.setRGB(point.getX(), point.getY(), 0x00FFFFFF));
+        pieces.forEach(piece -> piece.getPoints().forEach(point ->
+                image.setRGB(point.getX(), point.getY(), 16737480)));
+        pieces.stream().flatMap(piece -> piece.getOuterLocks().stream())
+                .flatMap(outerLock -> outerLock.getPoints().stream())
+                .forEach(point -> image.setRGB(point.getX(), point.getY(), 0x00FF0000));
+
+        imageService.writeImage(BASE_PATH_OUT + "single-piece-outer-locks.png", image);
+    }
+
+    @Test
+    public void shouldDetectOuterLocksOnMultiPieces() {
+
+        BufferedImage image = imageService.loadImage(BASE_PATH + IMAGE_MULTI_PIECES);
+        List<Point> backgroundPoints = imageService.detectBackground(image);
+        List<Point> piecesPoints = imageService.applyMask(image, backgroundPoints);
+        List<Piece> pieces = pieceService.detectPieces(piecesPoints);
+
+        backgroundPoints.forEach(point -> image.setRGB(point.getX(), point.getY(), 0x00FFFFFF));
+        pieces.forEach(piece -> piece.getPoints().forEach(point ->
+                image.setRGB(point.getX(), point.getY(), 16737480)));
+        pieces.stream().flatMap(piece -> piece.getOuterLocks().stream())
+                .flatMap(outerLock -> outerLock.getPoints().stream())
+                .forEach(point -> image.setRGB(point.getX(), point.getY(), 0x00FF0000));
+
+        imageService.writeImage(BASE_PATH_OUT + "multi-pieces-outer-locks.png", image);
     }
 }

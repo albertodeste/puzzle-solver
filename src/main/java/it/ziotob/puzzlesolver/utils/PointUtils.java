@@ -104,4 +104,54 @@ public class PointUtils {
                 .max(Comparator.comparingDouble(pair -> (double) pair.getValue()))
                 .orElse(new Pair<>(pointB, (float) 0));
     }
+
+    public static List<Point> segmentBetween(Point a, Point b) {
+
+        List<Point> result = new ArrayList<>();
+        result.add(a);
+        result.add(b);
+        Stack<Pair<Point, Point>> pointsToAnalyze = new Stack<>();
+        pointsToAnalyze.push(new Pair<>(a, b));
+
+        while(!pointsToAnalyze.isEmpty()) {
+
+            Pair<Point, Point> pair = pointsToAnalyze.pop();
+
+            if (!areClose(pair.getKey(), pair.getValue())) {
+
+                Point center = midPoint(pair.getKey(), pair.getValue());
+                result.add(center);
+                pointsToAnalyze.push(new Pair<>(pair.getKey(), center));
+                pointsToAnalyze.push(new Pair<>(center, pair.getValue()));
+            }
+        }
+
+        return result;
+    }
+
+    private static boolean areClose(Point pointA, Point pointB) {
+        return Math.abs(pointA.getX() - pointB.getX()) <= 1 && Math.abs(pointA.getY() - pointB.getY()) <= 1;
+    }
+
+    private static Point midPoint(Point a, Point b) {
+        return new Point((a.getX() + b.getX()) / 2, (a.getY() + b.getY()) / 2);
+    }
+
+    public static Optional<Point> detectInternalPoint(List<Point> perimeter, List<Point> points) {
+        return points.parallelStream().filter(p -> isInside(p, perimeter)).findAny();
+    }
+
+    private static boolean isInside(Point point, List<Point> perimeter) {
+
+        List<Point> collisions = perimeter.stream()
+                .filter(p -> p.getX().equals(point.getX()) || p.getY().equals(point.getY()))
+                .collect(Collectors.toList());
+
+        boolean xRightIncluded = collisions.stream().filter(p -> p.getY().equals(point.getY())).anyMatch(p -> p.getX() > point.getX());
+        boolean xLeftIncluded = collisions.stream().filter(p -> p.getY().equals(point.getY())).anyMatch(p -> p.getX() < point.getX());
+        boolean yUpperIncluded = collisions.stream().filter(p -> p.getX().equals(point.getX())).anyMatch(p -> p.getY() > point.getY());
+        boolean yLowerIncluded = collisions.stream().filter(p -> p.getX().equals(point.getX())).anyMatch(p -> p.getY() < point.getY());
+
+        return xRightIncluded && xLeftIncluded && yUpperIncluded && yLowerIncluded;
+    }
 }
