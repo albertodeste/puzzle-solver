@@ -317,4 +317,85 @@ public class SpikeTests {
 
         imageService.writeImage(BASE_PATH_OUT + "multi-pieces-outer-locks.png", image);
     }
+
+    @Test
+    public void shouldDetectInnerLocksOnSinglePiece() {
+
+        BufferedImage image = imageService.loadImage(BASE_PATH + IMAGE_SINGLE_PIECE);
+        List<Point> backgroundPoints = imageService.detectBackground(image);
+        List<Point> piecesPoints = imageService.applyMask(image, backgroundPoints);
+        List<Piece> pieces = pieceService.detectPieces(piecesPoints);
+
+        Assertions.assertThat(pieces)
+                .allMatch(piece -> piece.getInnerLocks().size() == 2);
+
+        backgroundPoints.forEach(point -> image.setRGB(point.getX(), point.getY(), 0x00FFFFFF));
+        pieces.forEach(piece -> piece.getPoints().forEach(point ->
+                image.setRGB(point.getX(), point.getY(), 16737480)));
+        pieces.stream().flatMap(piece -> piece.getInnerLocks().stream())
+                .flatMap(lock -> lock.getPoints().stream())
+                .forEach(point -> image.setRGB(point.getX(), point.getY(), 0x0000FF00));
+
+        imageService.writeImage(BASE_PATH_OUT + "single-piece-inner-locks.png", image);
+    }
+
+    @Test
+    public void shouldDetectInnerLocksOnMultiplePieces() {
+
+        BufferedImage image = imageService.loadImage(BASE_PATH + IMAGE_MULTI_PIECES);
+        List<Point> backgroundPoints = imageService.detectBackground(image);
+        List<Point> piecesPoints = imageService.applyMask(image, backgroundPoints);
+        List<Piece> pieces = pieceService.detectPieces(piecesPoints);
+
+        backgroundPoints.forEach(point -> image.setRGB(point.getX(), point.getY(), 0x00FFFFFF));
+        pieces.forEach(piece -> piece.getPoints().forEach(point ->
+                image.setRGB(point.getX(), point.getY(), 16737480)));
+        pieces.stream().flatMap(piece -> piece.getInnerLocks().stream())
+                .flatMap(lock -> lock.getPoints().stream())
+                .forEach(point -> image.setRGB(point.getX(), point.getY(), 0x0000FF00));
+
+        imageService.writeImage(BASE_PATH_OUT + "multi-pieces-inner-locks.png", image);
+    }
+
+    @Test
+    public void shouldDetectLocksOnSinglePiece() {
+
+        BufferedImage image = imageService.loadImage(BASE_PATH + IMAGE_SINGLE_PIECE);
+        List<Point> backgroundPoints = imageService.detectBackground(image);
+        List<Point> piecesPoints = imageService.applyMask(image, backgroundPoints);
+        List<Piece> pieces = pieceService.detectPieces(piecesPoints);
+
+        backgroundPoints.forEach(point -> image.setRGB(point.getX(), point.getY(), 0x00FFFFFF));
+        pieces.forEach(piece -> piece.getPoints().forEach(point ->
+                image.setRGB(point.getX(), point.getY(), 16737480)));
+        pieces.stream().flatMap(piece -> piece.getInnerLocks().stream())
+                .flatMap(lock -> lock.getPoints().stream())
+                .forEach(point -> image.setRGB(point.getX(), point.getY(), 0x0000FF00));
+        pieces.stream().flatMap(piece -> piece.getOuterLocks().stream())
+                .flatMap(lock -> lock.getPoints().stream())
+                .forEach(point -> image.setRGB(point.getX(), point.getY(), 0x00FF0000));
+
+        imageService.writeImage(BASE_PATH_OUT + "single-piece-locks.png", image);
+    }
+
+    @Test
+    public void shouldDetectLocksOnMultiplePieces() {
+
+        BufferedImage image = imageService.loadImage(BASE_PATH + IMAGE_MULTI_PIECES);
+        List<Point> backgroundPoints = imageService.detectBackground(image);
+        List<Point> piecesPoints = imageService.applyMask(image, backgroundPoints);
+        List<Piece> pieces = pieceService.detectPieces(piecesPoints);
+
+        backgroundPoints.forEach(point -> image.setRGB(point.getX(), point.getY(), 0x00FFFFFF));
+        pieces.forEach(piece -> piece.getPoints().forEach(point ->
+                image.setRGB(point.getX(), point.getY(), 16737480)));
+        pieces.stream().flatMap(piece -> piece.getInnerLocks().stream())
+                .flatMap(lock -> lock.getPoints().stream())
+                .forEach(point -> image.setRGB(point.getX(), point.getY(), 0x0000FF00));
+        pieces.stream().flatMap(piece -> piece.getOuterLocks().stream())
+                .flatMap(lock -> lock.getPoints().stream())
+                .forEach(point -> image.setRGB(point.getX(), point.getY(), 0x00FF0000));
+
+        imageService.writeImage(BASE_PATH_OUT + "multi-pieces-locks.png", image);
+    }
 }

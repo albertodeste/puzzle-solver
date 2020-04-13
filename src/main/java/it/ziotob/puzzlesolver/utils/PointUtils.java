@@ -154,4 +154,24 @@ public class PointUtils {
 
         return xRightIncluded && xLeftIncluded && yUpperIncluded && yLowerIncluded;
     }
+
+    public static List<Point> negative(List<Point> points) {
+
+        Point min = points.stream().reduce(new Point(Integer.MAX_VALUE, Integer.MAX_VALUE),
+                (prev, curr) -> new Point(Math.min(prev.getX(), curr.getX()), Math.min(prev.getY(), curr.getY())));
+        Point max = points.stream().reduce(new Point(Integer.MIN_VALUE, Integer.MIN_VALUE),
+                (prev, curr) -> new Point(Math.max(prev.getX(), curr.getX()), Math.max(prev.getY(), curr.getY())));
+        Set<Point> pointsSet = new HashSet<>(points);
+
+        return IntStream.range(min.getX(), max.getX())
+                .mapToObj(x -> IntStream.range(min.getY(), max.getY())
+                        .filter(y -> !pointsSet.contains(new Point(x, y)))
+                        .mapToObj(y -> new Point(x, y)))
+                .flatMap(s -> s)
+                .collect(Collectors.toList());
+    }
+
+    public static double getDistance(Point a, Point b) {
+        return Math.sqrt(Math.pow(a.getX() - b.getX(), 2.0) + Math.pow(a.getY() - b.getY(), 2.0));
+    }
 }

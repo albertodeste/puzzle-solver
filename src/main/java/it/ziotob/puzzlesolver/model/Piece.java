@@ -15,4 +15,5 @@ public class Piece {
     private final List<ConvexityDefect> convexityDefects;
     private final Point center;
     private final List<OuterLock> outerLocks;
+    private final List<InnerLock> innerLocks;
 }

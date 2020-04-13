@@ -2,6 +2,7 @@ package it.ziotob.puzzlesolver.model;
 
 import it.ziotob.puzzlesolver.exception.ApplicationException;
 import it.ziotob.puzzlesolver.utils.PointUtils;
+import javafx.util.Pair;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -28,8 +29,85 @@ public class PieceFactory {
         List<ConvexityDefect> convexityDefects = discardConvexityImperfections(detectConvexityDefects(borderPoints, convexHull));
         convexityDefects = sortClockwise(convexityDefects, borderPoints);
         List<OuterLock> outerLocks = detectOuterLocks(convexityDefects, borderPoints, points);
+        List<ConvexityDefect> convexityDefectsNoOuterLocks = excludeOuterLocks(convexityDefects, outerLocks);
+        List<InnerLock> innerLocks = detectInnerLocks(convexityDefectsNoOuterLocks, borderPoints, points);
 
-        return new Piece(points, borderPoints, convexHull, convexityDefects, center, outerLocks);
+        return new Piece(points, borderPoints, convexHull, convexityDefects, center, outerLocks, innerLocks);
+    }
+
+    private static List<InnerLock> detectInnerLocks(List<ConvexityDefect> convexityDefects, List<Point> borderPoints, List<Point> points) {
+
+        List<Point> pointsNegative = PointUtils.negative(points);
+
+        return convexityDefects.stream()
+                .map(convexityDefect -> detectInnerLock(convexityDefect, borderPoints, pointsNegative))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.toList());
+    }
+
+    private static Optional<InnerLock> detectInnerLock(ConvexityDefect convexityDefect, List<Point> borderPoints, List<Point> externalPoints) {
+
+        //TODO check, A and B might need to be reversed
+        Pair<Point, Point> closestHullPoints = bestMinHullPoints(convexityDefect.getHullPointA(), convexityDefect.getHullPointB(), borderPoints);
+        List<Point> perimeter = Stream.concat(
+                getClockwisePerimeterBetween(borderPoints, closestHullPoints.getKey(), closestHullPoints.getValue()).stream(),
+                PointUtils.segmentBetween(closestHullPoints.getKey(), closestHullPoints.getValue()).stream())
+                .distinct().collect(Collectors.toList());
+
+        List<Point> area = extractArea(perimeter, externalPoints);
+
+        BigDecimal circularityRate = BigDecimal.valueOf(area.size()).divide(BigDecimal.valueOf(perimeter.size()).pow(2), 5, RoundingMode.HALF_UP);
+        BigDecimal epsilon = new BigDecimal("0.018");
+        BigDecimal referenceValue = new BigDecimal("0.08");
+
+        if (circularityRate.subtract(referenceValue).abs().compareTo(epsilon) <= 0) {
+            return Optional.of(new InnerLock(perimeter, area, convexityDefect));
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    private static Pair<Point, Point> bestMinHullPoints(Point hullPointA, Point hullPointB, List<Point> perimeter) {
+        //Assume hullPointA is clockwise to hullPointB
+
+        double distance = PointUtils.getDistance(hullPointA, hullPointB);
+        double oldDistance = distance;
+
+        int index = 0;
+        while (!perimeter.get(index).equals(hullPointA)) {
+            index = (index + 1) % perimeter.size();
+        }
+
+        while ((distance = PointUtils.getDistance(perimeter.get(index), hullPointB)) <= oldDistance) {
+
+            oldDistance = distance;
+            index = (index + 1) % perimeter.size();
+        }
+        Point bestA = perimeter.get(index);
+        oldDistance = distance;
+
+        while (!perimeter.get(index).equals(hullPointB)) {
+            index = (index + 1) % perimeter.size();
+        }
+
+        while ((distance = PointUtils.getDistance(perimeter.get(index), bestA)) <= oldDistance) {
+
+            oldDistance = distance;
+            index = (index - 1) < 0 ? perimeter.size() - 1 : index - 1;
+        }
+        Point bestB = perimeter.get(index);
+
+        return new Pair<>(bestA, bestB);
+    }
+
+    private static List<ConvexityDefect> excludeOuterLocks(List<ConvexityDefect> convexityDefects, List<OuterLock> outerLocks) {
+
+        return convexityDefects.stream()
+                .filter(convexityLock -> outerLocks.stream()
+                        .flatMap(outerLock -> outerLock.getConvexityDefects().stream())
+                        .noneMatch(cl -> cl.equals(convexityLock)))
+                .collect(Collectors.toList());
     }
 
     private static List<OuterLock> detectOuterLocks(List<ConvexityDefect> convexityDefects, List<Point> borderPoints, List<Point> points) {
