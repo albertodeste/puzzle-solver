@@ -11,5 +11,5 @@ public class InnerLock {
 
     private final List<Point> borderPoints;
     private final List<Point> points;
-    private final ConvexityDefect convexityDefects;
+    private final ConvexityDefect convexityDefect;
 }

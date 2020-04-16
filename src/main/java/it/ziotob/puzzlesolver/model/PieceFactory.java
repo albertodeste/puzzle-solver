@@ -32,7 +32,63 @@ public class PieceFactory {
         List<ConvexityDefect> convexityDefectsNoOuterLocks = excludeOuterLocks(convexityDefects, outerLocks);
         List<InnerLock> innerLocks = detectInnerLocks(convexityDefectsNoOuterLocks, borderPoints, points);
 
-        return new Piece(points, borderPoints, convexHull, convexityDefects, center, outerLocks, innerLocks);
+        List<Point> shape = excludeLocks(points, outerLocks, innerLocks);
+        Point centerMass = detectMassCenter(shape).orElseThrow(() -> new ApplicationException("Unable to detect center mass"));
+        List<Point> corners = detectCorners(shape, centerMass);
+
+        return new Piece(points, borderPoints, convexHull, convexityDefects, center, outerLocks, innerLocks, centerMass, corners);
+    }
+
+    private static List<Point> detectCorners(List<Point> shape, Point center) {
+
+        List<Point> borders = sortBorders(detectBorderPoints(shape));
+        List<List<Point>> dividedBorders = divideBorders(borders);
+
+        return dividedBorders.stream()
+                .map(list -> list.stream()
+                        .max(Comparator.comparingDouble(point -> PointUtils.getDistance(point, center))))
+                .map(Optional::get)
+                .sorted(Comparator.comparingDouble(point -> PointUtils.getDistance(point, center) * -1))
+                .limit(4)
+                .collect(Collectors.toList());
+    }
+
+    private static List<List<Point>> divideBorders(List<Point> borders) {
+
+        final int segmentSize = borders.size() / 4;
+        return IntStream.range(0, borders.size())
+                .mapToObj(i -> new Pair<>(i, borders.get(i)))
+                .collect(Collectors.groupingBy(e -> e.getKey() / segmentSize))
+                .values().stream()
+                .map(pairList -> pairList.stream().map(Pair::getValue).collect(Collectors.toList()))
+                .collect(Collectors.toList());
+    }
+
+    private static Optional<Point> detectMassCenter(List<Point> shape) {
+
+        return shape.stream()
+                .map(point -> new Pair<>(BigDecimal.valueOf(point.getX()), BigDecimal.valueOf(point.getY())))
+                .reduce((prev, curr) -> new Pair<>(prev.getKey().add(curr.getKey()), prev.getValue().add(curr.getValue())))
+                .map(sums ->
+                        new Point(
+                                sums.getKey().divide(BigDecimal.valueOf(shape.size()), 0, RoundingMode.HALF_UP).intValue(),
+                                sums.getValue().divide(BigDecimal.valueOf(shape.size()), 0, RoundingMode.HALF_UP).intValue()
+                        )
+                );
+    }
+
+    private static List<Point> excludeLocks(List<Point> points, List<OuterLock> outerLocks, List<InnerLock> innerLocks) {
+
+        Set<Point> outerLocksPoints = outerLocks.stream()
+                .flatMap(lock -> lock.getPoints().stream())
+                .collect(Collectors.toSet());
+        Stream<Point> innerLocksPoints = innerLocks.stream()
+                .flatMap(lock -> lock.getPoints().stream());
+
+        return Stream.concat(
+                innerLocksPoints,
+                points.stream().filter(point -> !outerLocksPoints.contains(point))
+        ).collect(Collectors.toList());
     }
 
     private static List<InnerLock> detectInnerLocks(List<ConvexityDefect> convexityDefects, List<Point> borderPoints, List<Point> points) {
@@ -48,7 +104,6 @@ public class PieceFactory {
 
     private static Optional<InnerLock> detectInnerLock(ConvexityDefect convexityDefect, List<Point> borderPoints, List<Point> externalPoints) {
 
-        //TODO check, A and B might need to be reversed
         Pair<Point, Point> closestHullPoints = bestMinHullPoints(convexityDefect.getHullPointA(), convexityDefect.getHullPointB(), borderPoints);
         List<Point> perimeter = Stream.concat(
                 getClockwisePerimeterBetween(borderPoints, closestHullPoints.getKey(), closestHullPoints.getValue()).stream(),

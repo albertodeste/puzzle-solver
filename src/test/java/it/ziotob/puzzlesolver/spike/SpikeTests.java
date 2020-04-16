@@ -4,12 +4,14 @@ import it.ziotob.puzzlesolver.model.Piece;
 import it.ziotob.puzzlesolver.model.Point;
 import it.ziotob.puzzlesolver.services.ImageService;
 import it.ziotob.puzzlesolver.services.PieceService;
+import it.ziotob.puzzlesolver.utils.PointUtils;
 import org.assertj.core.api.Assertions;
 import org.junit.Test;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.List;
+import java.util.stream.Stream;
 
 public class SpikeTests {
 
@@ -387,8 +389,10 @@ public class SpikeTests {
         List<Piece> pieces = pieceService.detectPieces(piecesPoints);
 
         backgroundPoints.forEach(point -> image.setRGB(point.getX(), point.getY(), 0x00FFFFFF));
-        pieces.forEach(piece -> piece.getPoints().forEach(point ->
-                image.setRGB(point.getX(), point.getY(), 16737480)));
+        pieces.stream()
+                .filter(Piece::isFullyDetected)
+                .forEach(piece -> piece.getPoints().forEach(point ->
+                        image.setRGB(point.getX(), point.getY(), 16737480)));
         pieces.stream().flatMap(piece -> piece.getInnerLocks().stream())
                 .flatMap(lock -> lock.getPoints().stream())
                 .forEach(point -> image.setRGB(point.getX(), point.getY(), 0x0000FF00));
@@ -397,5 +401,52 @@ public class SpikeTests {
                 .forEach(point -> image.setRGB(point.getX(), point.getY(), 0x00FF0000));
 
         imageService.writeImage(BASE_PATH_OUT + "multi-pieces-locks.png", image);
+    }
+
+    @Test
+    public void shouldDetectShapeOnSinglePiece() {
+
+        BufferedImage image = imageService.loadImage(BASE_PATH + IMAGE_SINGLE_PIECE);
+        List<Point> backgroundPoints = imageService.detectBackground(image);
+        List<Point> piecesPoints = imageService.applyMask(image, backgroundPoints);
+        List<Piece> pieces = pieceService.detectPieces(piecesPoints);
+
+        backgroundPoints.forEach(point -> image.setRGB(point.getX(), point.getY(), 0x00FFFFFF));
+        pieces.forEach(piece -> piece.getPoints().forEach(point ->
+                image.setRGB(point.getX(), point.getY(), 16737480)));
+        pieces.forEach(piece -> drawSquare(image, piece.getCorners(), 0x0000FF00));
+
+        imageService.writeImage(BASE_PATH_OUT + "single-piece-shape.png", image);
+    }
+
+    private void drawSquare(BufferedImage image, List<Point> corners, int color) {
+
+        Stream.concat(
+                Stream.concat(
+                        PointUtils.segmentBetween(corners.get(0), corners.get(1)).stream(),
+                        PointUtils.segmentBetween(corners.get(1), corners.get(2)).stream()
+                ), Stream.concat(
+                        PointUtils.segmentBetween(corners.get(2), corners.get(3)).stream(),
+                        PointUtils.segmentBetween(corners.get(3), corners.get(0)).stream()
+                ))
+                .distinct()
+                .forEach(point -> image.setRGB(point.getX(), point.getY(), color));
+    }
+
+
+    @Test
+    public void shouldDetectShapeOnMultiplePieces() {
+
+        BufferedImage image = imageService.loadImage(BASE_PATH + IMAGE_MULTI_PIECES);
+        List<Point> backgroundPoints = imageService.detectBackground(image);
+        List<Point> piecesPoints = imageService.applyMask(image, backgroundPoints);
+        List<Piece> pieces = pieceService.detectPieces(piecesPoints);
+
+        backgroundPoints.forEach(point -> image.setRGB(point.getX(), point.getY(), 0x00FFFFFF));
+        pieces.forEach(piece -> piece.getPoints().forEach(point ->
+                image.setRGB(point.getX(), point.getY(), 16737480)));
+        pieces.forEach(piece -> drawSquare(image, piece.getCorners(), 0x0000FF00));
+
+        imageService.writeImage(BASE_PATH_OUT + "multi-pieces-shape.png", image);
     }
 }
