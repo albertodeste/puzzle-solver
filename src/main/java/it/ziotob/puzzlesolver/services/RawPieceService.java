@@ -1,7 +1,7 @@
 package it.ziotob.puzzlesolver.services;
 
-import it.ziotob.puzzlesolver.model.Piece;
-import it.ziotob.puzzlesolver.model.PieceFactory;
+import it.ziotob.puzzlesolver.model.RawPiece;
+import it.ziotob.puzzlesolver.model.RawPieceFactory;
 import it.ziotob.puzzlesolver.model.Point;
 import it.ziotob.puzzlesolver.model.PointsGroup;
 
@@ -9,9 +9,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-public class PieceService {
+public class RawPieceService {
 
-    public List<Piece> detectPieces(List<Point> piecesPoints) {
+    public List<RawPiece> detectPieces(List<Point> piecesPoints) {
 
         PointsGroup pointsGroup = new PointsGroup();
         piecesPoints.forEach(pointsGroup::addPoint);
@@ -26,7 +26,7 @@ public class PieceService {
         }
 
         return discardImperfections(result).parallelStream()
-                .map(PieceFactory::factory)
+                .map(RawPieceFactory::factory)
                 .collect(Collectors.toList());
     }
 

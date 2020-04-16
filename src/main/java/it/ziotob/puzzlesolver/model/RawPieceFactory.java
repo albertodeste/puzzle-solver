@@ -11,9 +11,9 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-public class PieceFactory {
+public class RawPieceFactory {
 
-    public static Piece factory(List<Point> points) {
+    public static RawPiece factory(List<Point> points) {
 
         AbstractMap.SimpleEntry<BigDecimal, BigDecimal> sums = points.parallelStream()
                 .map(point -> new AbstractMap.SimpleEntry<>(BigDecimal.valueOf(point.getX()), BigDecimal.valueOf(point.getY())))
@@ -36,7 +36,55 @@ public class PieceFactory {
         Point centerMass = detectMassCenter(shape).orElseThrow(() -> new ApplicationException("Unable to detect center mass"));
         List<Point> corners = detectCorners(shape, centerMass);
 
-        return new Piece(points, borderPoints, convexHull, convexityDefects, center, outerLocks, innerLocks, centerMass, corners);
+        Integer alpha = detectAlpha(corners, centerMass);
+
+        return new RawPiece(points, borderPoints, convexHull, convexityDefects, center, outerLocks, innerLocks, centerMass, corners, alpha);
+    }
+
+    private static Integer detectAlpha(List<Point> corners, Point centerMass) {
+
+        Point cornerPoint = corners.stream().findFirst().orElseThrow(() -> new ApplicationException("Detecting alpha without corners"));
+        Point cornerPoint1 = findClosest(corners, cornerPoint, Collections.singletonList(cornerPoint))
+                .orElseThrow(() -> new ApplicationException("Unable to detect cornerPoint1"));
+        Point cornerPoint2 = findClosest(corners, cornerPoint1, Arrays.asList(cornerPoint, cornerPoint1))
+                .orElseThrow(() -> new ApplicationException("Unable to detect cornerPoint2"));
+        Point cornerPoint3 = findClosest(corners, cornerPoint2, Arrays.asList(cornerPoint, cornerPoint1, cornerPoint2))
+                .orElseThrow(() -> new ApplicationException("Unable to detect cornerPoint3"));
+
+        Point originalCenter1 = new Point((cornerPoint.getX() + cornerPoint1.getX()) / 2, (cornerPoint.getY() + cornerPoint1.getY()) / 2);
+        Point originalCenter2 = new Point((cornerPoint2.getX() + cornerPoint3.getX()) / 2, (cornerPoint2.getY() + cornerPoint3.getY()) / 2);
+
+        Point center1 = originalCenter1;
+        Point center2 = originalCenter2;
+        int alpha = 0;
+        Pair<Integer, Integer> best = new Pair<>(alpha, Integer.MAX_VALUE);
+
+        while (best.getValue() != 0 && alpha < 90) {
+
+            center1 = PointUtils.rotate(originalCenter1, centerMass, alpha);
+            center2 = PointUtils.rotate(originalCenter2, centerMass, alpha);
+            int bestDistance = Math.min(Math.abs(center1.getX() - center2.getX()), Math.abs(center1.getY() - center2.getY()));
+
+            if (bestDistance < best.getValue()) {
+                best = new Pair<>(alpha, bestDistance);
+            }
+            alpha++;
+        }
+
+        alpha = best.getKey();
+
+        if (Math.abs(alpha - 90) < alpha) {
+            return alpha - 90;
+        } else {
+            return alpha;
+        }
+    }
+
+    private static Optional<Point> findClosest(List<Point> corners, Point cornerPoint, List<Point> excluding) {
+
+        return corners.stream()
+                .filter(p -> !excluding.contains(p))
+                .min(Comparator.comparingDouble(p -> PointUtils.getDistance(p, cornerPoint)));
     }
 
     private static List<Point> detectCorners(List<Point> shape, Point center) {

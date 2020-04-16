@@ -174,4 +174,16 @@ public class PointUtils {
     public static double getDistance(Point a, Point b) {
         return Math.sqrt(Math.pow(a.getX() - b.getX(), 2.0) + Math.pow(a.getY() - b.getY(), 2.0));
     }
+
+    public static Point rotate(Point point, Point center, int alpha) {
+
+        double alphaRadians = Math.toRadians(alpha);
+        int x1 = point.getX() - center.getX();
+        int y1 = point.getY() - center.getY();
+
+        int tempX1 = (int) (x1 * Math.cos(alphaRadians) - y1 * Math.sin(alphaRadians));
+        int tempY1 = (int) (x1 * Math.sin(alphaRadians) + y1 * Math.cos(alphaRadians));
+
+        return new Point(tempX1 + center.getX(), tempY1 + center.getY());
+    }
 }

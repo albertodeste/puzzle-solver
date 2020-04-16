@@ -1,10 +1,11 @@
 package it.ziotob.puzzlesolver.spike;
 
-import it.ziotob.puzzlesolver.model.Piece;
 import it.ziotob.puzzlesolver.model.Point;
+import it.ziotob.puzzlesolver.model.RawPiece;
 import it.ziotob.puzzlesolver.services.ImageService;
-import it.ziotob.puzzlesolver.services.PieceService;
+import it.ziotob.puzzlesolver.services.RawPieceService;
 import it.ziotob.puzzlesolver.utils.PointUtils;
+import javafx.util.Pair;
 import org.assertj.core.api.Assertions;
 import org.junit.Test;
 
@@ -22,7 +23,7 @@ public class SpikeTests {
     private static final String IMAGE_MULTI_PIECES = "multi-pieces.jpg";
 
     private final ImageService imageService = new ImageService(ImageService.DEFAULT_HSV_TOLERANCE);
-    private final PieceService pieceService = new PieceService();
+    private final RawPieceService pieceService = new RawPieceService();
 
     @Test
     public void shouldLoadImage() {
@@ -102,7 +103,7 @@ public class SpikeTests {
         BufferedImage image = imageService.loadImage(BASE_PATH + IMAGE_SINGLE_PIECE);
         List<Point> backgroundPoints = imageService.detectBackground(image);
         List<Point> piecesPoints = imageService.applyMask(image, backgroundPoints);
-        List<Piece> pieces = pieceService.detectPieces(piecesPoints);
+        List<RawPiece> pieces = pieceService.detectPieces(piecesPoints);
 
         Assertions.assertThat(pieces.size()).isEqualTo(1);
 
@@ -117,7 +118,7 @@ public class SpikeTests {
         BufferedImage image = imageService.loadImage(BASE_PATH + IMAGE_MULTI_PIECES);
         List<Point> backgroundPoints = imageService.detectBackground(image);
         List<Point> piecesPoints = imageService.applyMask(image, backgroundPoints);
-        List<Piece> pieces = pieceService.detectPieces(piecesPoints);
+        List<RawPiece> pieces = pieceService.detectPieces(piecesPoints);
 
         Assertions.assertThat(pieces.size()).isEqualTo(9);
 
@@ -132,7 +133,7 @@ public class SpikeTests {
         BufferedImage image = imageService.loadImage(BASE_PATH + IMAGE_SINGLE_PIECE);
         List<Point> backgroundPoints = imageService.detectBackground(image);
         List<Point> piecesPoints = imageService.applyMask(image, backgroundPoints);
-        List<Piece> pieces = pieceService.detectPieces(piecesPoints);
+        List<RawPiece> pieces = pieceService.detectPieces(piecesPoints);
 
         Assertions.assertThat(pieces)
                 .allMatch(piece -> !piece.getBorderPoints().isEmpty());
@@ -176,7 +177,7 @@ public class SpikeTests {
         BufferedImage image = imageService.loadImage(BASE_PATH + IMAGE_MULTI_PIECES);
         List<Point> backgroundPoints = imageService.detectBackground(image);
         List<Point> piecesPoints = imageService.applyMask(image, backgroundPoints);
-        List<Piece> pieces = pieceService.detectPieces(piecesPoints);
+        List<RawPiece> pieces = pieceService.detectPieces(piecesPoints);
 
         Assertions.assertThat(pieces)
                 .allMatch(piece -> !piece.getBorderPoints().isEmpty());
@@ -194,7 +195,7 @@ public class SpikeTests {
         BufferedImage image = imageService.loadImage(BASE_PATH + IMAGE_SINGLE_PIECE);
         List<Point> backgroundPoints = imageService.detectBackground(image);
         List<Point> piecesPoints = imageService.applyMask(image, backgroundPoints);
-        List<Piece> pieces = pieceService.detectPieces(piecesPoints);
+        List<RawPiece> pieces = pieceService.detectPieces(piecesPoints);
 
         Assertions.assertThat(pieces)
                 .allMatch(piece -> !piece.getHullPoints().isEmpty());
@@ -215,7 +216,7 @@ public class SpikeTests {
         BufferedImage image = imageService.loadImage(BASE_PATH + IMAGE_MULTI_PIECES);
         List<Point> backgroundPoints = imageService.detectBackground(image);
         List<Point> piecesPoints = imageService.applyMask(image, backgroundPoints);
-        List<Piece> pieces = pieceService.detectPieces(piecesPoints);
+        List<RawPiece> pieces = pieceService.detectPieces(piecesPoints);
 
         Assertions.assertThat(pieces)
                 .allMatch(piece -> !piece.getHullPoints().isEmpty());
@@ -239,7 +240,7 @@ public class SpikeTests {
         BufferedImage image = imageService.loadImage(BASE_PATH + IMAGE_SINGLE_PIECE);
         List<Point> backgroundPoints = imageService.detectBackground(image);
         List<Point> piecesPoints = imageService.applyMask(image, backgroundPoints);
-        List<Piece> pieces = pieceService.detectPieces(piecesPoints);
+        List<RawPiece> pieces = pieceService.detectPieces(piecesPoints);
 
         Assertions.assertThat(pieces)
                 .allMatch(piece -> piece.getConvexityDefects().size() == 6);
@@ -263,7 +264,7 @@ public class SpikeTests {
         BufferedImage image = imageService.loadImage(BASE_PATH + IMAGE_MULTI_PIECES);
         List<Point> backgroundPoints = imageService.detectBackground(image);
         List<Point> piecesPoints = imageService.applyMask(image, backgroundPoints);
-        List<Piece> pieces = pieceService.detectPieces(piecesPoints);
+        List<RawPiece> pieces = pieceService.detectPieces(piecesPoints);
 
         Assertions.assertThat(pieces)
                 .allMatch(piece -> !piece.getConvexityDefects().isEmpty());
@@ -287,7 +288,7 @@ public class SpikeTests {
         BufferedImage image = imageService.loadImage(BASE_PATH + IMAGE_SINGLE_PIECE);
         List<Point> backgroundPoints = imageService.detectBackground(image);
         List<Point> piecesPoints = imageService.applyMask(image, backgroundPoints);
-        List<Piece> pieces = pieceService.detectPieces(piecesPoints);
+        List<RawPiece> pieces = pieceService.detectPieces(piecesPoints);
 
         Assertions.assertThat(pieces)
                 .allMatch(piece -> piece.getOuterLocks().size() == 2);
@@ -308,7 +309,7 @@ public class SpikeTests {
         BufferedImage image = imageService.loadImage(BASE_PATH + IMAGE_MULTI_PIECES);
         List<Point> backgroundPoints = imageService.detectBackground(image);
         List<Point> piecesPoints = imageService.applyMask(image, backgroundPoints);
-        List<Piece> pieces = pieceService.detectPieces(piecesPoints);
+        List<RawPiece> pieces = pieceService.detectPieces(piecesPoints);
 
         backgroundPoints.forEach(point -> image.setRGB(point.getX(), point.getY(), 0x00FFFFFF));
         pieces.forEach(piece -> piece.getPoints().forEach(point ->
@@ -326,7 +327,7 @@ public class SpikeTests {
         BufferedImage image = imageService.loadImage(BASE_PATH + IMAGE_SINGLE_PIECE);
         List<Point> backgroundPoints = imageService.detectBackground(image);
         List<Point> piecesPoints = imageService.applyMask(image, backgroundPoints);
-        List<Piece> pieces = pieceService.detectPieces(piecesPoints);
+        List<RawPiece> pieces = pieceService.detectPieces(piecesPoints);
 
         Assertions.assertThat(pieces)
                 .allMatch(piece -> piece.getInnerLocks().size() == 2);
@@ -347,7 +348,7 @@ public class SpikeTests {
         BufferedImage image = imageService.loadImage(BASE_PATH + IMAGE_MULTI_PIECES);
         List<Point> backgroundPoints = imageService.detectBackground(image);
         List<Point> piecesPoints = imageService.applyMask(image, backgroundPoints);
-        List<Piece> pieces = pieceService.detectPieces(piecesPoints);
+        List<RawPiece> pieces = pieceService.detectPieces(piecesPoints);
 
         backgroundPoints.forEach(point -> image.setRGB(point.getX(), point.getY(), 0x00FFFFFF));
         pieces.forEach(piece -> piece.getPoints().forEach(point ->
@@ -365,7 +366,7 @@ public class SpikeTests {
         BufferedImage image = imageService.loadImage(BASE_PATH + IMAGE_SINGLE_PIECE);
         List<Point> backgroundPoints = imageService.detectBackground(image);
         List<Point> piecesPoints = imageService.applyMask(image, backgroundPoints);
-        List<Piece> pieces = pieceService.detectPieces(piecesPoints);
+        List<RawPiece> pieces = pieceService.detectPieces(piecesPoints);
 
         backgroundPoints.forEach(point -> image.setRGB(point.getX(), point.getY(), 0x00FFFFFF));
         pieces.forEach(piece -> piece.getPoints().forEach(point ->
@@ -386,11 +387,11 @@ public class SpikeTests {
         BufferedImage image = imageService.loadImage(BASE_PATH + IMAGE_MULTI_PIECES);
         List<Point> backgroundPoints = imageService.detectBackground(image);
         List<Point> piecesPoints = imageService.applyMask(image, backgroundPoints);
-        List<Piece> pieces = pieceService.detectPieces(piecesPoints);
+        List<RawPiece> pieces = pieceService.detectPieces(piecesPoints);
 
         backgroundPoints.forEach(point -> image.setRGB(point.getX(), point.getY(), 0x00FFFFFF));
         pieces.stream()
-                .filter(Piece::isFullyDetected)
+                .filter(RawPiece::isFullyDetected)
                 .forEach(piece -> piece.getPoints().forEach(point ->
                         image.setRGB(point.getX(), point.getY(), 16737480)));
         pieces.stream().flatMap(piece -> piece.getInnerLocks().stream())
@@ -409,7 +410,7 @@ public class SpikeTests {
         BufferedImage image = imageService.loadImage(BASE_PATH + IMAGE_SINGLE_PIECE);
         List<Point> backgroundPoints = imageService.detectBackground(image);
         List<Point> piecesPoints = imageService.applyMask(image, backgroundPoints);
-        List<Piece> pieces = pieceService.detectPieces(piecesPoints);
+        List<RawPiece> pieces = pieceService.detectPieces(piecesPoints);
 
         backgroundPoints.forEach(point -> image.setRGB(point.getX(), point.getY(), 0x00FFFFFF));
         pieces.forEach(piece -> piece.getPoints().forEach(point ->
@@ -433,14 +434,13 @@ public class SpikeTests {
                 .forEach(point -> image.setRGB(point.getX(), point.getY(), color));
     }
 
-
     @Test
     public void shouldDetectShapeOnMultiplePieces() {
 
         BufferedImage image = imageService.loadImage(BASE_PATH + IMAGE_MULTI_PIECES);
         List<Point> backgroundPoints = imageService.detectBackground(image);
         List<Point> piecesPoints = imageService.applyMask(image, backgroundPoints);
-        List<Piece> pieces = pieceService.detectPieces(piecesPoints);
+        List<RawPiece> pieces = pieceService.detectPieces(piecesPoints);
 
         backgroundPoints.forEach(point -> image.setRGB(point.getX(), point.getY(), 0x00FFFFFF));
         pieces.forEach(piece -> piece.getPoints().forEach(point ->
@@ -448,5 +448,39 @@ public class SpikeTests {
         pieces.forEach(piece -> drawSquare(image, piece.getCorners(), 0x0000FF00));
 
         imageService.writeImage(BASE_PATH_OUT + "multi-pieces-shape.png", image);
+    }
+
+    @Test
+    public void shouldAlignShapeOnSinglePiece() {
+
+        BufferedImage image = imageService.loadImage(BASE_PATH + IMAGE_SINGLE_PIECE);
+        List<Point> backgroundPoints = imageService.detectBackground(image);
+        List<Point> piecesPoints = imageService.applyMask(image, backgroundPoints);
+        List<RawPiece> pieces = pieceService.detectPieces(piecesPoints);
+
+        BufferedImage resultImage = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        pieces.parallelStream()
+                .flatMap(piece -> piece.getPoints().stream()
+                        .map(p -> new Pair<>(PointUtils.rotate(p, piece.getCenter(), piece.getRotationAngle()), image.getRGB(p.getX(), p.getY()))))
+                .forEach(pair -> resultImage.setRGB(pair.getKey().getX(), pair.getKey().getY(), pair.getValue()));
+
+        imageService.writeImage(BASE_PATH_OUT + "single-piece-rotated.png", resultImage);
+    }
+
+    @Test
+    public void shouldAlignShapeOnMultiplePieces() {
+
+        BufferedImage image = imageService.loadImage(BASE_PATH + IMAGE_MULTI_PIECES);
+        List<Point> backgroundPoints = imageService.detectBackground(image);
+        List<Point> piecesPoints = imageService.applyMask(image, backgroundPoints);
+        List<RawPiece> pieces = pieceService.detectPieces(piecesPoints);
+
+        BufferedImage resultImage = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        pieces.parallelStream()
+                .flatMap(piece -> piece.getPoints().stream()
+                        .map(p -> new Pair<>(PointUtils.rotate(p, piece.getCenter(), piece.getRotationAngle()), image.getRGB(p.getX(), p.getY()))))
+                .forEach(pair -> resultImage.setRGB(pair.getKey().getX(), pair.getKey().getY(), pair.getValue()));
+
+        imageService.writeImage(BASE_PATH_OUT + "multi-pieces-rotated.png", resultImage);
     }
 }
