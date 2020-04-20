@@ -186,4 +186,18 @@ public class PointUtils {
 
         return new Point(tempX1 + center.getX(), tempY1 + center.getY());
     }
+
+    public static Optional<Point> getClosestPoint(List<Point> points, Point point) {
+
+        return points.stream()
+                .min(Comparator.comparingDouble(p -> PointUtils.getDistance(p, point)));
+    }
+
+    public static List<Point> sortWithBorder(List<Point> points, List<Point> borderPoints) {
+
+        Set<Point> pointsSet = new HashSet<>(points);
+        return borderPoints.stream()
+                .filter(pointsSet::contains)
+                .collect(Collectors.toList());
+    }
 }

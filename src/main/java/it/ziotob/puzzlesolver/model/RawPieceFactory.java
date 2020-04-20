@@ -14,6 +14,10 @@ import java.util.stream.Stream;
 public class RawPieceFactory {
 
     public static RawPiece factory(List<Point> points) {
+        return factory(points, Collections.emptyList());
+    }
+
+    public static RawPiece factory(List<Point> points, List<Point> extraHullPoints) {
 
         AbstractMap.SimpleEntry<BigDecimal, BigDecimal> sums = points.parallelStream()
                 .map(point -> new AbstractMap.SimpleEntry<>(BigDecimal.valueOf(point.getX()), BigDecimal.valueOf(point.getY())))
@@ -25,7 +29,10 @@ public class RawPieceFactory {
         Point center = new Point(midX.intValue(), midY.intValue());
 
         List<Point> borderPoints = PointUtils.sortClockwise(sortBorders(detectBorderPoints(points)));
-        List<Point> convexHull = PointUtils.sortClockwise(PointUtils.convexHull(borderPoints));
+        List<Point> convexHull = PointUtils.sortWithBorder(Stream.concat(
+                PointUtils.convexHull(borderPoints).stream(),
+                extraHullPoints.stream()).collect(Collectors.toList()),
+                borderPoints);
         List<ConvexityDefect> convexityDefects = discardConvexityImperfections(detectConvexityDefects(borderPoints, convexHull));
         convexityDefects = sortClockwise(convexityDefects, borderPoints);
         List<OuterLock> outerLocks = detectOuterLocks(convexityDefects, borderPoints, points);

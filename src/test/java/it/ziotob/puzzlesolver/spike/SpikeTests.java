@@ -4,14 +4,17 @@ import it.ziotob.puzzlesolver.model.Point;
 import it.ziotob.puzzlesolver.model.RawPiece;
 import it.ziotob.puzzlesolver.services.ImageService;
 import it.ziotob.puzzlesolver.services.RawPieceService;
+import it.ziotob.puzzlesolver.tools.PieceEditor;
 import it.ziotob.puzzlesolver.utils.PointUtils;
 import javafx.util.Pair;
 import org.assertj.core.api.Assertions;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class SpikeTests {
@@ -482,5 +485,31 @@ public class SpikeTests {
                 .forEach(pair -> resultImage.setRGB(pair.getKey().getX(), pair.getKey().getY(), pair.getValue()));
 
         imageService.writeImage(BASE_PATH_OUT + "multi-pieces-rotated.png", resultImage);
+    }
+
+    @Test
+    public void shouldOpenEditorWindow() {
+
+        BufferedImage image = imageService.loadImage(BASE_PATH + IMAGE_MULTI_PIECES);
+        List<Point> backgroundPoints = imageService.detectBackground(image);
+        List<Point> piecesPoints = imageService.applyMask(image, backgroundPoints);
+        List<RawPiece> pieces = pieceService.detectPieces(piecesPoints).stream()
+                .map(piece -> {
+                    if (piece.isFullyDetected()) {
+                        return piece;
+                    } else {
+
+                        PieceEditor editor = new PieceEditor(piece);
+                        return editor.editPiece();
+                    }
+                }).collect(Collectors.toList());
+
+        BufferedImage resultImage = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        pieces.parallelStream()
+                .flatMap(piece -> piece.getPoints().stream()
+                        .map(p -> new Pair<>(PointUtils.rotate(p, piece.getCenter(), piece.getRotationAngle()), image.getRGB(p.getX(), p.getY()))))
+                .forEach(pair -> resultImage.setRGB(pair.getKey().getX(), pair.getKey().getY(), pair.getValue()));
+
+        imageService.writeImage(BASE_PATH_OUT + "multi-pieces-fixed.png", resultImage);
     }
 }
